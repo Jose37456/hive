@@ -329,6 +329,33 @@ hive run exports/my_agent --tui
 
 > **Using Python directly:** `PYTHONPATH=exports uv run python -m agent_name run --input '{...}'`
 
+### Agents with Function Nodes
+
+Some agents mix LLM-driven `event_loop` nodes with **function nodes** — nodes whose logic is a plain Python callable rather than a prompt. If your agent uses function nodes you must register the implementation before execution. The recommended pattern follows the template agents in `examples/templates/`:
+
+```python
+# exports/my_agent/agent.py
+from framework.graph.executor import GraphExecutor
+
+class MyAgent:
+    async def run(self, context: dict) -> dict:
+        executor = GraphExecutor(graph=self._graph, llm=self._llm)
+
+        # Register each function node by its node ID
+        executor.register_function("transform", self._transform)
+        executor.register_function("validate", self._validate)
+
+        return await executor.execute(context)
+
+    async def _transform(self, ctx):
+        # Pure Python logic — no LLM call
+        return {"result": ctx.input_data["value"] * 2}
+```
+
+> **Important:** `hive run` and the TUI call `agent.run()` from your `agent.py`. As long as `agent.py` registers all function nodes inside `run()` (or `_setup()`), the CLI and TUI will use your registrations automatically. If your agent uses `create_agent_runtime()` instead of `GraphExecutor`, function node registration is not available — use the `GraphExecutor` pattern for any agent that requires function nodes.
+
+See [`examples/templates/deep_research_agent/agent.py`](../examples/templates/deep_research_agent/agent.py) for a complete reference implementation.
+
 ---
 
 ## Testing Agents
