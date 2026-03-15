@@ -244,6 +244,7 @@ def _dump_failed_request(
 def _compute_retry_delay(
     attempt: int,
     exception: BaseException | None = None,
+    response: object | None = None,
     backoff_base: int = RATE_LIMIT_BACKOFF_BASE,
     max_delay: int = RATE_LIMIT_MAX_DELAY,
 ) -> float:
@@ -258,39 +259,39 @@ def _compute_retry_delay(
     All values are capped at max_delay seconds.
     """
     if exception is not None:
-        response = getattr(exception, "response", None)
-        if response is not None:
-            headers = getattr(response, "headers", None)
-            if headers is not None:
-                # Priority 1: retry-after-ms (milliseconds)
-                retry_after_ms = headers.get("retry-after-ms")
-                if retry_after_ms is not None:
-                    try:
-                        delay = float(retry_after_ms) / 1000.0
-                        return min(max(delay, 0), max_delay)
-                    except (ValueError, TypeError):
-                        pass
+        response = getattr(exception, "response", None) or response
+    if response is not None:
+        headers = getattr(response, "headers", None)
+        if headers is not None:
+            # Priority 1: retry-after-ms (milliseconds)
+            retry_after_ms = headers.get("retry-after-ms")
+            if retry_after_ms is not None:
+                try:
+                    delay = float(retry_after_ms) / 1000.0
+                    return min(max(delay, 0), max_delay)
+                except (ValueError, TypeError):
+                    pass
 
-                # Priority 2: retry-after (seconds or HTTP-date)
-                retry_after = headers.get("retry-after")
-                if retry_after is not None:
-                    # Try as seconds (float)
-                    try:
-                        delay = float(retry_after)
-                        return min(max(delay, 0), max_delay)
-                    except (ValueError, TypeError):
-                        pass
+            # Priority 2: retry-after (seconds or HTTP-date)
+            retry_after = headers.get("retry-after")
+            if retry_after is not None:
+                # Try as seconds (float)
+                try:
+                    delay = float(retry_after)
+                    return min(max(delay, 0), max_delay)
+                except (ValueError, TypeError):
+                    pass
 
-                    # Try as HTTP-date (e.g., "Fri, 31 Dec 2025 23:59:59 GMT")
-                    try:
-                        from email.utils import parsedate_to_datetime
+                # Try as HTTP-date (e.g., "Fri, 31 Dec 2025 23:59:59 GMT")
+                try:
+                    from email.utils import parsedate_to_datetime
 
-                        retry_date = parsedate_to_datetime(retry_after)
-                        now = datetime.now(retry_date.tzinfo)
-                        delay = (retry_date - now).total_seconds()
-                        return min(max(delay, 0), max_delay)
-                    except (ValueError, TypeError, OverflowError):
-                        pass
+                    retry_date = parsedate_to_datetime(retry_after)
+                    now = datetime.now(retry_date.tzinfo)
+                    delay = (retry_date - now).total_seconds()
+                    return min(max(delay, 0), max_delay)
+                except (ValueError, TypeError, OverflowError):
+                    pass
 
     # Fallback: exponential backoff
     delay = backoff_base * (2**attempt)
@@ -499,7 +500,7 @@ class LiteLLMProvider(LLMProvider):
                             f"choices={len(response.choices) if response.choices else 0})"
                         )
                         return response
-                    wait = _compute_retry_delay(attempt)
+                    wait = _compute_retry_delay(attempt, response=response)
                     logger.warning(
                         f"[retry] {model} returned empty response "
                         f"(finish_reason={finish_reason}, "
@@ -700,7 +701,7 @@ class LiteLLMProvider(LLMProvider):
                             f"choices={len(response.choices) if response.choices else 0})"
                         )
                         return response
-                    wait = _compute_retry_delay(attempt)
+                    wait = _compute_retry_delay(attempt, response=response)
                     logger.warning(
                         f"[async-retry] {model} returned empty response "
                         f"(finish_reason={finish_reason}, "
@@ -1229,15 +1230,16 @@ class LiteLLMProvider(LLMProvider):
                             error_type="empty_stream",
                             attempt=attempt,
                         )
+                        wait = _compute_retry_delay(attempt)
                         logger.warning(
                             f"[stream-retry] {self.model} returned empty stream "
                             f"after {last_role} message — "
                             f"~{token_count} tokens ({token_method}). "
                             f"Request dumped to: {dump_path}. "
-                            f"Retrying in {EMPTY_STREAM_RETRY_DELAY}s "
+                            f"Retrying in {wait}s "
                             f"(attempt {attempt + 1}/{EMPTY_STREAM_MAX_RETRIES})"
                         )
-                        await asyncio.sleep(EMPTY_STREAM_RETRY_DELAY)
+                        await asyncio.sleep(wait)
                         continue
 
                     # All retries exhausted — log and return the empty
