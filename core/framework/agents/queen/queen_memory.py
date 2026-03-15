@@ -200,6 +200,7 @@ def read_session_context(session_dir: Path, max_messages: int = 80) -> str:
                     label = "user" if role == "user" else "queen"
                     lines.append(f"[{label}]: {content[:600]}")
             except Exception:
+                logger.debug("Malformed conversation message skipped", exc_info=True)
                 continue
         if lines:
             parts.append("## Conversation\n\n" + "\n".join(lines))
@@ -368,4 +369,4 @@ async def consolidate_queen_memory(
                 encoding="utf-8",
             )
         except Exception:
-            pass
+            logger.debug("Could not write consolidation error to file", exc_info=True)

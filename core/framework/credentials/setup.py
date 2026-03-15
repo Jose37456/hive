@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import getpass
 import json
+import logging
 import os
 import sys
 from collections.abc import Callable
@@ -36,6 +37,8 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from framework.graph import NodeSpec
+
+logger = logging.getLogger(__name__)
 
 
 # ANSI colors for terminal output
@@ -434,7 +437,7 @@ class CredentialSetupSession:
                     if value:
                         os.environ[cred.env_var] = value
                 except Exception:
-                    pass
+                    logger.debug("Could not export Aden credential to env", exc_info=True)
                 return True
             else:
                 self._print(
@@ -458,7 +461,7 @@ class CredentialSetupSession:
                 "details": result.details,
             }
         except Exception:
-            # No health checker available
+            logger.debug("Health check unavailable for credential", exc_info=True)
             return None
 
     def _store_credential(self, cred: MissingCredential, value: str) -> None:
@@ -562,6 +565,7 @@ def _load_nodes_from_python_agent(agent_path: Path) -> list:
         spec.loader.exec_module(module)
         return getattr(module, "nodes", [])
     except Exception:
+        logger.debug("Could not load nodes from Python agent at %s", agent_path, exc_info=True)
         return []
 
 
@@ -589,6 +593,7 @@ def _load_nodes_from_json_agent(agent_json: Path) -> list:
             )
         return nodes
     except Exception:
+        logger.debug("Could not load nodes from JSON agent at %s", agent_json, exc_info=True)
         return []
 
 

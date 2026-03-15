@@ -16,6 +16,7 @@ after the user picks an account programmatically.
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -34,6 +35,8 @@ from .nodes import build_tester_node
 
 if TYPE_CHECKING:
     from framework.runner import AgentRunner
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Goal
@@ -108,6 +111,7 @@ def _list_aden_accounts() -> list[dict]:
             if c.status == "active"
         ]
     except Exception:
+        logger.warning("Unexpected error listing Aden integrations", exc_info=True)
         return []
 
 
@@ -120,6 +124,7 @@ def _list_local_accounts() -> list[dict]:
             info.to_account_dict() for info in LocalCredentialRegistry.default().list_accounts()
         ]
     except Exception:
+        logger.warning("Unexpected error listing local accounts", exc_info=True)
         return []
 
 
@@ -141,6 +146,7 @@ def _list_env_fallback_accounts() -> list[dict]:
 
         encrypted_ids: set[str] = set(EncryptedFileStorage().list_all())
     except Exception:
+        logger.warning("Unexpected error reading encrypted credential store", exc_info=True)
         encrypted_ids = set()
 
     def _is_configured(cred_name: str, spec) -> bool:
@@ -301,7 +307,7 @@ def _activate_local_account(credential_id: str, alias: str) -> None:
             if key:
                 os.environ[spec.env_var] = key
     except Exception:
-        pass
+        logger.warning("Unexpected error injecting credential into environment", exc_info=True)
 
 
 def _configure_aden_node(
