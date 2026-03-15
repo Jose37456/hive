@@ -488,8 +488,8 @@ def _get_account_id_from_jwt(access_token: str) -> str | None:
             account_id = auth.get("chatgpt_account_id")
             if isinstance(account_id, str) and account_id:
                 return account_id
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("Could not extract ChatGPT account ID from access token: %s", exc)
     return None
 
 
@@ -546,8 +546,8 @@ def get_kimi_code_token() -> str | None:
                 key = provider_cfg.get("api_key")
                 if key:
                     return key
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("Could not read kimi-cli config: %s", exc)
     return None
 
 
@@ -1320,8 +1320,8 @@ class AgentRunner:
                 from framework.graph.prompt_composer import build_accounts_prompt
 
                 accounts_prompt = build_accounts_prompt(accounts_data, tool_provider_map)
-        except Exception:
-            pass  # Best-effort — agent works without account info
+        except Exception as exc:
+            logger.warning("Could not load account info for agent prompt (best-effort): %s", exc)
 
         self._setup_agent_runtime(
             tools,
@@ -1398,7 +1398,8 @@ class AgentRunner:
 
                 store = CredentialStore.with_encrypted_storage()
             return store.get(cred_id)
-        except Exception:
+        except Exception as exc:
+            logger.debug("Could not retrieve credential '%s' from store: %s", cred_id, exc)
             return None
 
     @staticmethod
@@ -1945,9 +1946,8 @@ Respond with JSON only:
                     reasoning=data.get("reasoning", ""),
                     estimated_steps=data.get("estimated_steps"),
                 )
-        except Exception:
-            # Fall back to keyword matching on error
-            pass
+        except Exception as exc:
+            logger.warning("LLM capability check failed, falling back to keyword matching: %s", exc)
 
         return self._keyword_capability_check(request)
 
