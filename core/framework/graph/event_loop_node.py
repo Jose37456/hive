@@ -210,6 +210,13 @@ class LoopConfig:
     stream_retry_backoff_base: float = 2.0
     stream_retry_max_delay: float = 60.0  # cap per-retry sleep
 
+    # --- Per-call tool timeout ---
+    # Each real tool invocation is wrapped in asyncio.wait_for() with this
+    # deadline.  On timeout the tool returns an error result so the agent
+    # can retry or escalate instead of hanging indefinitely.
+    # Set to None to disable (matches the previous behaviour).
+    tool_call_timeout_seconds: float | None = 120.0
+
     # --- Tool doom loop detection ---
     # Detect when the LLM calls the same tool(s) with identical args for
     # N consecutive turns.  For client-facing nodes, blocks for user input.
@@ -2401,8 +2408,29 @@ class EventLoopNode(NodeProtocol):
                     """Execute a tool and return (result, start_iso, duration_s)."""
                     _s = time.time()
                     _iso = datetime.now(UTC).isoformat()
+                    _timeout = self._config.tool_call_timeout_seconds
                     try:
-                        _r = await self._execute_tool(_tc)
+                        if _timeout is not None:
+                            _r = await asyncio.wait_for(
+                                self._execute_tool(_tc), timeout=_timeout
+                            )
+                        else:
+                            _r = await self._execute_tool(_tc)
+                    except TimeoutError:
+                        logger.warning(
+                            "[%s] tool '%s' timed out after %.0fs",
+                            node_id,
+                            _tc.tool_name,
+                            _timeout,
+                        )
+                        _r = ToolResult(
+                            tool_use_id=_tc.tool_use_id,
+                            content=(
+                                f"Tool '{_tc.tool_name}' timed out after "
+                                f"{_timeout:.0f}s. The operation did not complete."
+                            ),
+                            is_error=True,
+                        )
                     except BaseException as _exc:
                         _r = _exc
                     _dur = round(time.time() - _s, 3)
