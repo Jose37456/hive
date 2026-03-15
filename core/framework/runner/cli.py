@@ -439,6 +439,15 @@ def cmd_run(args: argparse.Namespace) -> int:
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
+    # Validate before executing — fail fast on structural errors
+    validation = runner.validate()
+    if not validation.valid:
+        print("✗ Agent validation failed — cannot run:", file=sys.stderr)
+        for error in validation.errors:
+            print(f"  ERROR: {error}", file=sys.stderr)
+        runner.cleanup()
+        return 1
+
     # Prompt before starting (allows credential updates)
     if sys.stdin.isatty() and not args.quiet:
         runner = _prompt_before_start(args.agent_path, runner, args.model)
@@ -950,6 +959,15 @@ def cmd_shell(args: argparse.Namespace) -> int:
         return 1
     except FileNotFoundError as e:
         print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+    # Validate before starting the session — fail fast on structural errors
+    validation = runner.validate()
+    if not validation.valid:
+        print("✗ Agent validation failed — cannot start shell session:", file=sys.stderr)
+        for error in validation.errors:
+            print(f"  ERROR: {error}", file=sys.stderr)
+        runner.cleanup()
         return 1
 
     # Set up approval callback by default (unless --no-approve is set)
