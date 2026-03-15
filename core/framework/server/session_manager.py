@@ -103,6 +103,16 @@ class SessionManager:
 
         async with self._lock:
             if resolved_id in self._sessions:
+                if session_id is not None:
+                    # Caller explicitly requested an existing session ID (e.g. a
+                    # cold-restore that races with the still-alive in-memory
+                    # session).  Return the live session instead of erroring so
+                    # the frontend can reconnect without a 409.
+                    logger.warning(
+                        "Session '%s' already exists in memory; returning existing session.",
+                        resolved_id,
+                    )
+                    return self._sessions[resolved_id]
                 raise ValueError(f"Session '{resolved_id}' already exists")
 
         # Load LLM config from ~/.hive/configuration.json
@@ -676,6 +686,15 @@ class SessionManager:
         history accumulates in one place across server restarts.
         """
         from framework.server.queen_orchestrator import create_queen
+
+        # If the queen is already running (e.g. we returned an existing in-memory
+        # session instead of creating a new one), do not start a second queen.
+        if session.queen_task is not None and not session.queen_task.done():
+            logger.debug(
+                "Session '%s' queen already running; skipping _start_queen.",
+                session.id,
+            )
+            return
 
         hive_home = Path.home() / ".hive"
 
