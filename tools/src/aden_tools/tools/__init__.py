@@ -131,6 +131,7 @@ from .trello_tool import register_tools as register_trello
 from .twilio_tool import register_tools as register_twilio
 from .twitter_tool import register_tools as register_twitter
 from .vercel_tool import register_tools as register_vercel
+from .virustotal_tool import register_tools as register_virustotal
 from .vision_tool import register_tools as register_vision
 from .web_scrape_tool import register_tools as register_web_scrape
 from .web_search_tool import register_tools as register_web_search
@@ -295,6 +296,7 @@ def _register_unverified(
     register_twilio(mcp, credentials=credentials)
     register_twitter(mcp, credentials=credentials)
     register_vercel(mcp, credentials=credentials)
+    register_virustotal(mcp, credentials=credentials)
     register_youtube(mcp, credentials=credentials)
     register_zendesk(mcp, credentials=credentials)
     register_zoho_crm(mcp, credentials=credentials)
