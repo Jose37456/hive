@@ -214,6 +214,42 @@ flowchart LR
 - [Configuration Guide](docs/configuration.md) - All configuration options
 - [Architecture Overview](docs/architecture/README.md) - System design and structure
 
+## Frontend
+
+Hive includes a modern web interface (React + TypeScript) introduced in v0.6.0 for agent management and real-time monitoring.
+
+### Launch the web UI
+
+```bash
+# Recommended — starts the backend and opens the browser automatically
+hive serve
+
+# Re-open the dashboard without restarting the server
+hive open
+
+# Development server (hot-reload, connects to a running backend)
+cd core/frontend
+npm install
+npm run dev
+```
+
+On Windows use the PowerShell wrapper instead:
+
+```powershell
+.\hive.ps1 serve
+.\hive.ps1 open
+```
+
+### Web UI features
+
+- **Agent Management** — browse, create, configure, and delete agents
+- **Workspace** — interactive chat panel, live execution log, and graph visualizer
+- **Real-time Monitoring** — SSE-streamed node transitions, tool calls, and decisions
+- **Credential Manager** — configure and test API keys directly in the browser
+- **Template Gallery** — one-click launch of pre-built agent templates
+
+The frontend source lives in `core/frontend/` and is built with Vite + React. API communication goes through the aiohttp server in `core/framework/server/`.
+
 ## Roadmap
 
 Aden Hive Agent Framework aims to help developers build outcome-oriented, self-adaptive agents. See [roadmap.md](docs/roadmap.md) for details.
