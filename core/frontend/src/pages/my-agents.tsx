@@ -6,7 +6,7 @@ import { agentsApi } from "@/api/agents";
 import type { DiscoverEntry } from "@/api/types";
 
 function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
+  const diff = Math.max(0, Date.now() - new Date(iso).getTime());
   const seconds = Math.floor(diff / 1000);
   if (seconds < 60) return "Just now";
   const minutes = Math.floor(seconds / 60);
