@@ -46,6 +46,7 @@ from .calendar_tool import register_tools as register_calendar
 from .calendly_tool import register_tools as register_calendly
 from .cloudinary_tool import register_tools as register_cloudinary
 from .confluence_tool import register_tools as register_confluence
+from .country_info_tool import register_tools as register_country_info
 from .csv_tool import register_tools as register_csv
 from .databricks_tool import register_tools as register_databricks
 from .discord_tool import register_tools as register_discord
@@ -153,6 +154,7 @@ def _register_verified(
     register_web_scrape(mcp)
     register_pdf_read(mcp)
     register_time(mcp)
+    register_country_info(mcp)
     register_runtime_logs(mcp)
     register_wikipedia(mcp)
     register_arxiv(mcp)
