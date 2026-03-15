@@ -16,6 +16,7 @@ Protocol:
 """
 
 import asyncio
+import copy
 import json
 import logging
 from abc import ABC, abstractmethod
@@ -306,10 +307,14 @@ class SharedMemory:
             self._lock = asyncio.Lock()
 
     def read(self, key: str) -> Any:
-        """Read a value from shared memory."""
+        """Read a value from shared memory.
+
+        Returns a deep copy so callers cannot accidentally mutate stored state
+        by modifying the returned object in-place.
+        """
         if self._allowed_read and key not in self._allowed_read:
             raise PermissionError(f"Node not allowed to read key: {key}")
-        return self._data.get(key)
+        return copy.deepcopy(self._data.get(key))
 
     def write(self, key: str, value: Any, validate: bool = True) -> None:
         """
@@ -448,10 +453,16 @@ class SharedMemory:
         return False
 
     def read_all(self) -> dict[str, Any]:
-        """Read all accessible data."""
+        """Read all accessible data.
+
+        Returns a deep copy so callers cannot accidentally mutate stored state
+        by modifying the returned dict or its nested objects.
+        """
         if self._allowed_read:
-            return {k: v for k, v in self._data.items() if k in self._allowed_read}
-        return dict(self._data)
+            return copy.deepcopy(
+                {k: v for k, v in self._data.items() if k in self._allowed_read}
+            )
+        return copy.deepcopy(dict(self._data))
 
     def with_permissions(
         self,
