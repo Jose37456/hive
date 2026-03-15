@@ -283,33 +283,48 @@ Use the coder-tools MCP tools from your IDE agent chat (e.g., initialize_and_bui
 
 If you prefer to build agents manually:
 
-```python
-# exports/my_agent/agent.json
+```json
 {
-  "goal": {
-    "goal_id": "support_ticket",
-    "name": "Support Ticket Handler",
-    "description": "Process customer support tickets",
-    "success_criteria": "Ticket is categorized, prioritized, and routed correctly"
+  "agent": {
+    "id": "support_ticket_agent",
+    "name": "Support Ticket Agent",
+    "version": "1.0.0",
+    "description": "Process and route customer support tickets"
   },
-  "nodes": [
-    {
-      "node_id": "analyze",
-      "name": "Analyze Ticket",
-      "node_type": "event_loop",
-      "system_prompt": "Analyze this support ticket...",
-      "input_keys": ["ticket_content"],
-      "output_keys": ["category", "priority"]
-    }
-  ],
-  "edges": [
-    {
-      "edge_id": "start_to_analyze",
-      "source": "START",
-      "target": "analyze",
-      "condition": "on_success"
-    }
-  ]
+  "graph": {
+    "id": "support-ticket-graph",
+    "entry_node": "analyze",
+    "terminal_nodes": ["route"],
+    "nodes": [
+      {
+        "id": "analyze",
+        "name": "Analyze Ticket",
+        "description": "Categorize and prioritize the support ticket",
+        "node_type": "event_loop",
+        "system_prompt": "Analyze this support ticket and determine its category and priority.",
+        "input_keys": ["ticket_content"],
+        "output_keys": ["category", "priority"],
+        "success_criteria": "Ticket is assigned a valid category and priority level"
+      },
+      {
+        "id": "route",
+        "name": "Route Ticket",
+        "description": "Route the ticket to the correct team",
+        "node_type": "event_loop",
+        "system_prompt": "Route the ticket to the appropriate support team.",
+        "input_keys": ["category", "priority"],
+        "output_keys": ["assigned_team"]
+      }
+    ],
+    "edges": [
+      {
+        "id": "analyze_to_route",
+        "source": "analyze",
+        "target": "route",
+        "condition": "on_success"
+      }
+    ]
+  }
 }
 ```
 
@@ -587,16 +602,18 @@ def my_custom_tool(param1: str, param2: int) -> Dict[str, Any]:
     # Implementation
     return {"result": "success", "data": ...}
 
-# Register tool in agent.json
+# Register tool in agent.json (note: use "id", not "node_id")
 {
-  "nodes": [
-    {
-      "node_id": "use_tool",
-      "node_type": "event_loop",
-      "tools": ["my_custom_tool"],
-      ...
-    }
-  ]
+  "graph": {
+    "nodes": [
+      {
+        "id": "use_tool",
+        "node_type": "event_loop",
+        "tools": ["my_custom_tool"],
+        "..."
+      }
+    ]
+  }
 }
 ```
 
@@ -617,13 +634,15 @@ def my_custom_tool(param1: str, param2: int) -> Dict[str, Any]:
 
 # 2. Reference tools in agent.json
 {
-  "nodes": [
-    {
-      "node_id": "search",
-      "tools": ["web_search", "web_scrape"],
-      ...
-    }
-  ]
+  "graph": {
+    "nodes": [
+      {
+        "id": "search",
+        "tools": ["web_search", "web_scrape"],
+        "..."
+      }
+    ]
+  }
 }
 ```
 
