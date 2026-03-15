@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import ReactDOM from "react-dom";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Plus, KeyRound, Sparkles, Layers, ChevronLeft, Bot, Loader2, WifiOff, X } from "lucide-react";
+import { Plus, KeyRound, Sparkles, Layers, ChevronLeft, Bot, Loader2, WifiOff, X, Home } from "lucide-react";
 import AgentGraph, { type GraphNode, type NodeStatus } from "@/components/AgentGraph";
 import DraftGraph from "@/components/DraftGraph";
 import ChatPanel, { type ChatMessage } from "@/components/ChatPanel";
@@ -2901,8 +2901,15 @@ export default function Workspace() {
                   <WifiOff className="w-4 h-4 text-destructive" />
                   <span className="text-xs text-destructive">Backend unavailable: {activeAgentState.error}</span>
                   <button
+                    onClick={() => navigate("/")}
+                    className="ml-auto flex items-center gap-1 text-xs font-medium text-destructive hover:underline"
+                  >
+                    <Home className="w-3.5 h-3.5" />
+                    Go Home
+                  </button>
+                  <button
                     onClick={() => setDismissedBanner(activeAgentState.error!)}
-                    className="ml-auto p-0.5 rounded text-destructive hover:text-destructive hover:bg-destructive/20 transition-colors"
+                    className="p-0.5 rounded text-destructive hover:text-destructive hover:bg-destructive/20 transition-colors"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
