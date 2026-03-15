@@ -400,36 +400,46 @@ class SharedMemory:
         Returns:
             True if code indicators are found, False otherwise
         """
-        code_indicators = [
-            # Python
+        # Strong indicators: almost never appear in normal prose; one match = code.
+        strong_indicators = [
             "```python",
-            "def ",
-            "class ",
-            "import ",
+            "```javascript",
+            "```typescript",
             "async def ",
-            "from ",
-            # JavaScript/TypeScript
-            "function ",
-            "const ",
-            "let ",
+            "def ",
             "=> {",
             "require(",
-            "export ",
-            # SQL
-            "SELECT ",
-            "INSERT ",
-            "UPDATE ",
-            "DELETE ",
-            "DROP ",
-            # HTML/Script injection
             "<script",
             "<?php",
             "<%",
+            "INSERT INTO",
         ]
+
+        # Weak indicators: legitimate English words that also appear in code.
+        # Require 3+ distinct matches before treating as code.
+        weak_indicators = [
+            "class ",
+            "import ",
+            "from ",
+            "function ",
+            "const ",
+            "let ",
+            "export ",
+            "SELECT ",
+            "UPDATE ",
+            "DELETE ",
+            "DROP ",
+        ]
+
+        def _check_chunk(chunk: str) -> bool:
+            if any(ind in chunk for ind in strong_indicators):
+                return True
+            weak_hits = sum(1 for ind in weak_indicators if ind in chunk)
+            return weak_hits >= 3
 
         # For strings under 10KB, check the entire content
         if len(value) < 10000:
-            return any(indicator in value for indicator in code_indicators)
+            return _check_chunk(value)
 
         # For longer strings, sample at strategic positions
         sample_positions = [
@@ -442,7 +452,7 @@ class SharedMemory:
 
         for pos in sample_positions:
             chunk = value[pos : pos + 2000]
-            if any(indicator in chunk for indicator in code_indicators):
+            if _check_chunk(chunk):
                 return True
 
         return False
