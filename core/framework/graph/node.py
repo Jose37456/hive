@@ -644,8 +644,9 @@ class NodeProtocol(ABC):
                     reasoning="Direct evaluation"
                 )
 
-                # Do the work
-                result = eval(expression)
+                # Do the work (use safe_eval, never bare eval())
+                from framework.graph.safe_eval import safe_eval
+                result = safe_eval(expression, context={"input": ctx.input_data})
 
                 # Record outcome
                 ctx.runtime.record_outcome(decision_id, success=True, result=result)
