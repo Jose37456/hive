@@ -25,9 +25,16 @@ This will:
 
 ## Windows Setup
 
-Windows users should use **WSL (Windows Subsystem for Linux)** to set up and run agents.
+Hive supports two development paths on Windows:
 
-1. [Install WSL 2](https://learn.microsoft.com/en-us/windows/wsl/install) if you haven't already:
+| Path | Recommendation | Notes |
+|------|---------------|-------|
+| **WSL 2** (recommended) | Best experience | Full Unix toolchain, `./quickstart.sh` works natively |
+| **Native Windows** (Git Bash / PowerShell) | Supported | Use `quickstart.ps1` instead of `quickstart.sh`; some shell scripts require Git Bash |
+
+### Option A — WSL 2 (Recommended)
+
+1. [Install WSL 2](https://learn.microsoft.com/en-us/windows/wsl/install):
    ```powershell
    wsl --install
    ```
@@ -35,6 +42,27 @@ Windows users should use **WSL (Windows Subsystem for Linux)** to set up and run
    ```bash
    ./quickstart.sh
    ```
+
+### Option B — Native Windows
+
+If you prefer to stay on native Windows, use Git Bash or PowerShell:
+
+```powershell
+# PowerShell setup (no WSL required)
+./quickstart.ps1
+```
+
+> **Note:** The `./quickstart.sh` Bash script requires WSL or Git Bash. On PowerShell use `./quickstart.ps1`. Most `hive` CLI commands and `uv run python -m pytest` work natively on Windows without WSL.
+
+### API keys on Windows
+
+```powershell
+# PowerShell
+$env:ANTHROPIC_API_KEY = "your-key-here"
+
+# Git Bash / WSL
+export ANTHROPIC_API_KEY="your-key-here"
+```
 
 ## Alpine Linux Setup
 
