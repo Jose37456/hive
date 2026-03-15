@@ -86,6 +86,7 @@ from .hubspot_tool import register_tools as register_hubspot
 from .huggingface_tool import register_tools as register_huggingface
 from .intercom_tool import register_tools as register_intercom
 from .jira_tool import register_tools as register_jira
+from .json_yaml_tool import register_tools as register_json_yaml
 from .kafka_tool import register_tools as register_kafka
 from .langfuse_tool import register_tools as register_langfuse
 from .linear_tool import register_tools as register_linear
@@ -233,6 +234,7 @@ def _register_unverified(
     """Register unverified (new/community) tools."""
     # --- No credentials ---
     register_duckduckgo(mcp)
+    register_json_yaml(mcp)
     register_yahoo_finance(mcp)
     register_youtube_transcript(mcp)
 
