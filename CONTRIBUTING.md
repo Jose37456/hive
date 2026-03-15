@@ -446,6 +446,41 @@ async def test_anthropic_provider_real(anthropic_api_key):
     assert "4" in response.content
 ```
 
+### API Keys for Contributors
+
+**Do I need to buy an API key to contribute?**
+
+No. Most contributions — bug fixes, documentation, new tools, tests — do **not** require a live LLM API key. The test suite uses mocking by default:
+
+```bash
+# All unit/integration tests run without real API calls
+cd core && uv run python -m pytest           # no API key needed
+cd tools && uv run python -m pytest          # no API key needed
+```
+
+Only **live end-to-end agent runs** require a real key. To develop without one:
+
+| What you're doing | API key needed? |
+|-------------------|-----------------|
+| Unit tests, mocked tests | ❌ No |
+| Adding a new tool (without live test) | ❌ No |
+| Fixing a bug in non-LLM code | ❌ No |
+| Writing documentation | ❌ No |
+| Running a real agent end-to-end | ✅ Yes |
+| Live LLM provider tests (`@pytest.mark.live`) | ✅ Yes |
+
+**Getting a free-tier key:**
+- **Anthropic** — [console.anthropic.com](https://console.anthropic.com/) (free trial credits available)
+- **Google Gemini** — [aistudio.google.com](https://aistudio.google.com/) (free tier available)
+- **Groq** — [console.groq.com](https://console.groq.com/) (generous free tier)
+- **Ollama** — run models locally with no API cost: `ollama run llama3`
+
+**Mock mode for development:**
+```bash
+# Set a dummy key — works for all non-live tests
+export ANTHROPIC_API_KEY="sk-ant-test000"
+```
+
 ### Priority Areas for LLM Contributions
 
 - [ ] **Cost tracking per agent** — Track spend by agent/workflow
