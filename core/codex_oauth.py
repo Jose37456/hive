@@ -153,7 +153,7 @@ def save_credentials(token_data: dict, account_id: str) -> None:
 
     CODEX_AUTH_FILE.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     fd = os.open(CODEX_AUTH_FILE, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    with os.fdopen(fd, "w") as f:
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
         json.dump(auth_data, f, indent=2)
 
 
