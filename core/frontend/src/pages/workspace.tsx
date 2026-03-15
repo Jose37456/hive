@@ -2825,7 +2825,7 @@ export default function Workspace() {
       <div className="flex flex-1 min-h-0">
 
         {/* ── Pipeline graph + chat ──────────────────────────────────── */}
-        <div className={`${activeAgentState?.queenPhase === "planning" || activeAgentState?.queenPhase === "building" || activeAgentState?.originalDraft ? "w-[500px] min-w-[400px]" : "w-[300px] min-w-[240px]"} bg-card/30 flex flex-col border-r border-border/30 transition-[width] duration-200`}>
+        <div className={`${activeAgentState?.queenPhase === "planning" || activeAgentState?.queenPhase === "building" || activeAgentState?.originalDraft ? "md:w-[500px] md:min-w-[400px]" : "md:w-[300px] md:min-w-[240px]"} hidden md:flex flex-col bg-card/30 border-r border-border/30 transition-[width] duration-200`}>
           <div className="flex-1 min-h-0">
             {activeAgentState?.queenPhase === "planning" || activeAgentState?.queenPhase === "building" ? (
               <DraftGraph draft={activeAgentState?.draftGraph ?? null} loading={!activeAgentState?.draftGraph} building={activeAgentState?.queenBuilding} onRun={handleRun} onPause={handlePause} runState={activeAgentState?.workerRunState ?? "idle"} />
@@ -2938,7 +2938,7 @@ export default function Workspace() {
             )}
           </div>
           {resolvedSelectedNode && (
-            <div className="w-[480px] min-w-[400px] flex-shrink-0">
+            <div className="hidden md:block md:w-[480px] md:min-w-[400px] flex-shrink-0">
               {resolvedSelectedNode.nodeType === "trigger" ? (
                 <div className="flex flex-col h-full border-l border-border/40 bg-card/20 animate-in slide-in-from-right">
                   <div className="px-4 pt-4 pb-3 border-b border-border/30 flex items-start justify-between gap-2">
