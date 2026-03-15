@@ -20,7 +20,7 @@ from typing import Any
 
 from pydantic import SecretStr
 
-from .models import CredentialDecryptionError, CredentialKey, CredentialObject, CredentialType
+from .models import CredentialDecryptionError, CredentialError, CredentialKey, CredentialObject, CredentialType
 
 logger = logging.getLogger(__name__)
 
@@ -487,18 +487,35 @@ class CompositeStorage(CredentialStorage):
         self._primary.save(credential)
 
     def load(self, credential_id: str) -> CredentialObject | None:
-        """Load from primary, then fallbacks."""
-        # Try primary first
-        credential = self._primary.load(credential_id)
-        if credential is not None:
-            return credential
+        """Load from primary, then fallbacks.
+
+        If the primary backend raises a CredentialError (e.g. decryption
+        failure), fallback backends are still tried before re-raising.
+        """
+        primary_error: CredentialError | None = None
+        try:
+            credential = self._primary.load(credential_id)
+            if credential is not None:
+                return credential
+        except CredentialError as exc:
+            primary_error = exc
+            logger.warning(
+                "Primary storage failed for '%s', trying fallbacks: %s",
+                credential_id,
+                exc,
+            )
 
         # Try fallbacks
         for fallback in self._fallbacks:
-            credential = fallback.load(credential_id)
-            if credential is not None:
-                return credential
+            try:
+                credential = fallback.load(credential_id)
+                if credential is not None:
+                    return credential
+            except CredentialError:
+                continue
 
+        if primary_error is not None:
+            raise primary_error
         return None
 
     def delete(self, credential_id: str) -> bool:
@@ -514,6 +531,9 @@ class CompositeStorage(CredentialStorage):
 
     def exists(self, credential_id: str) -> bool:
         """Check if credential exists in any storage."""
-        if self._primary.exists(credential_id):
-            return True
+        try:
+            if self._primary.exists(credential_id):
+                return True
+        except CredentialError:
+            pass
         return any(fallback.exists(credential_id) for fallback in self._fallbacks)
