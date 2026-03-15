@@ -131,6 +131,29 @@ async def handle_create_session(request: web.Request) -> web.Response:
     # so the full history accumulates in one place across server restarts.
     queen_resume_from = body.get("queen_resume_from")
 
+    # Pre-flight: verify that the configured LLM API key is available.
+    # This surfaces a clear error to the UI instead of letting the queen
+    # start and fail mid-turn with a cryptic AuthenticationError.
+    try:
+        from framework.config import get_api_key, get_preferred_model
+
+        if not get_api_key():
+            configured_model = get_preferred_model()
+            return web.json_response(
+                {
+                    "error": (
+                        f"LLM API key is not configured for model '{configured_model}'. "
+                        "Please set your API key via 'hive credentials set' or the Credentials "
+                        "page in the dashboard before starting a session."
+                    ),
+                    "error_type": "missing_llm_key",
+                    "model": configured_model,
+                },
+                status=400,
+            )
+    except Exception:
+        pass  # Config unavailable — let the session start and fail naturally
+
     if agent_path:
         try:
             agent_path = str(validate_agent_path(agent_path))
