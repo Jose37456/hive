@@ -197,6 +197,15 @@ class EdgeSpec(BaseModel):
                 expr_vars or "none matched",
             )
             return result
+        except NameError as e:
+            # Undefined variable — most likely a typo in condition_expr.
+            # Raise so the developer gets a clear error immediately rather
+            # than silently routing the agent down the wrong path.
+            raise ValueError(
+                f"Edge '{self.id}' condition references undefined variable: {e}. "
+                f"Expression: '{self.condition_expr}'. "
+                f"Available context keys: {list(context.keys())}"
+            ) from e
         except Exception as e:
             logger.warning(f"      ⚠ Condition evaluation failed: {self.condition_expr}")
             logger.warning(f"         Error: {e}")
