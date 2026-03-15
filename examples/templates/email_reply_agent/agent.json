@@ -1,0 +1,197 @@
+{
+  "agent": {
+    "id": "email_reply_agent",
+    "name": "Email Reply Agent",
+    "version": "1.0.0",
+    "description": "Filter unreplied emails by user criteria, confirm recipients, send personalized replies."
+  },
+  "graph": {
+    "id": "email-reply-graph",
+    "goal_id": "email-reply-goal",
+    "version": "1.0.0",
+    "entry_node": "intake",
+    "entry_points": {
+      "start": "intake"
+    },
+    "pause_nodes": [],
+    "terminal_nodes": [],
+    "nodes": [
+      {
+        "id": "intake",
+        "name": "Intake",
+        "description": "Gather email filter criteria from user",
+        "node_type": "event_loop",
+        "input_keys": ["batch_complete", "restart"],
+        "output_keys": ["filter_criteria"],
+        "nullable_output_keys": ["batch_complete", "restart"],
+        "input_schema": {},
+        "output_schema": {},
+        "system_prompt": null,
+        "tools": [],
+        "model": null,
+        "function": null,
+        "routes": {},
+        "max_retries": 3,
+        "retry_on": [],
+        "max_node_visits": 0,
+        "output_model": null,
+        "max_validation_retries": 2,
+        "client_facing": true
+      },
+      {
+        "id": "search",
+        "name": "Search Emails",
+        "description": "Search Gmail for unreplied emails matching filter criteria",
+        "node_type": "event_loop",
+        "input_keys": ["filter_criteria"],
+        "output_keys": ["email_list"],
+        "nullable_output_keys": [],
+        "input_schema": {},
+        "output_schema": {},
+        "system_prompt": null,
+        "tools": ["gmail_list_messages", "gmail_get_message", "gmail_batch_get_messages"],
+        "model": null,
+        "function": null,
+        "routes": {},
+        "max_retries": 3,
+        "retry_on": [],
+        "max_node_visits": 0,
+        "output_model": null,
+        "max_validation_retries": 2,
+        "client_facing": false
+      },
+      {
+        "id": "confirm-draft",
+        "name": "Confirm & Reply",
+        "description": "Present emails for confirmation, send personalized replies",
+        "node_type": "event_loop",
+        "input_keys": ["email_list", "filter_criteria"],
+        "output_keys": ["batch_complete", "restart"],
+        "nullable_output_keys": ["batch_complete", "restart"],
+        "input_schema": {},
+        "output_schema": {},
+        "system_prompt": null,
+        "tools": ["gmail_reply_email"],
+        "model": null,
+        "function": null,
+        "routes": {},
+        "max_retries": 3,
+        "retry_on": [],
+        "max_node_visits": 0,
+        "output_model": null,
+        "max_validation_retries": 2,
+        "client_facing": true
+      }
+    ],
+    "edges": [
+      {
+        "id": "intake-to-search",
+        "source": "intake",
+        "target": "search",
+        "condition": "on_success",
+        "condition_expr": null,
+        "priority": 1,
+        "input_mapping": {}
+      },
+      {
+        "id": "search-to-confirm",
+        "source": "search",
+        "target": "confirm-draft",
+        "condition": "on_success",
+        "condition_expr": null,
+        "priority": 1,
+        "input_mapping": {}
+      },
+      {
+        "id": "confirm-to-intake-on-restart",
+        "source": "confirm-draft",
+        "target": "intake",
+        "condition": "conditional",
+        "condition_expr": "restart == True",
+        "priority": 2,
+        "input_mapping": {}
+      },
+      {
+        "id": "confirm-to-intake-on-complete",
+        "source": "confirm-draft",
+        "target": "intake",
+        "condition": "conditional",
+        "condition_expr": "batch_complete == True",
+        "priority": 1,
+        "input_mapping": {}
+      }
+    ],
+    "max_steps": 100,
+    "max_retries_per_node": 3,
+    "description": "Filter unreplied emails by user criteria, confirm recipients, send personalized replies.",
+    "created_at": "2026-03-15T00:00:00.000000"
+  },
+  "goal": {
+    "id": "email-reply-goal",
+    "name": "Email Reply Agent",
+    "description": "Filter unreplied emails by user criteria, confirm recipients, send personalized replies.",
+    "status": "draft",
+    "success_criteria": [
+      {
+        "id": "sc-filter",
+        "description": "Accurately finds unreplied emails matching user criteria",
+        "metric": "Precision of email filtering",
+        "target": "90%",
+        "weight": 0.35,
+        "met": false
+      },
+      {
+        "id": "sc-confirm",
+        "description": "User confirms recipient list before sending",
+        "metric": "Confirmation rate",
+        "target": "100%",
+        "weight": 0.25,
+        "met": false
+      },
+      {
+        "id": "sc-personalize",
+        "description": "Replies are personalized based on email content and tone guidance",
+        "metric": "User satisfaction with reply relevance",
+        "target": "85%",
+        "weight": 0.40,
+        "met": false
+      }
+    ],
+    "constraints": [
+      {
+        "id": "c-privacy",
+        "description": "Never send emails without explicit user confirmation; always present recipient list and get approval first",
+        "constraint_type": "hard",
+        "category": "functional",
+        "check": ""
+      },
+      {
+        "id": "c-batch",
+        "description": "Process up to 50 emails per batch",
+        "constraint_type": "hard",
+        "category": "functional",
+        "check": ""
+      }
+    ],
+    "context": {},
+    "required_capabilities": [],
+    "input_schema": {},
+    "output_schema": {},
+    "version": "1.0.0",
+    "parent_version": null,
+    "evolution_reason": null,
+    "created_at": "2026-03-15 00:00:00.000000",
+    "updated_at": "2026-03-15 00:00:00.000000"
+  },
+  "required_tools": [
+    "gmail_list_messages",
+    "gmail_get_message",
+    "gmail_batch_get_messages",
+    "gmail_reply_email"
+  ],
+  "metadata": {
+    "created_at": "2026-03-15T00:00:00.000000",
+    "node_count": 3,
+    "edge_count": 4
+  }
+}
