@@ -786,6 +786,7 @@ $ProviderMap = [ordered]@{
     MISTRAL_API_KEY   = @{ Name = "Mistral";             Id = "mistral" }
     TOGETHER_API_KEY  = @{ Name = "Together AI";         Id = "together" }
     DEEPSEEK_API_KEY  = @{ Name = "DeepSeek";            Id = "deepseek" }
+    OPENROUTER_API_KEY = @{ Name = "OpenRouter";         Id = "openrouter" }
 }
 
 $DefaultModels = @{
@@ -797,6 +798,7 @@ $DefaultModels = @{
     mistral     = "mistral-large-latest"
     together_ai = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
     deepseek    = "deepseek-chat"
+    openrouter  = "openrouter/auto"
 }
 
 # Model choices: array of hashtables per provider
