@@ -3,12 +3,20 @@
 import logging
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from aiohttp import web
 
 from framework.server.session_manager import Session, SessionManager
 
+if TYPE_CHECKING:
+    from framework.credentials.store import CredentialStore
+
 logger = logging.getLogger(__name__)
+
+# Typed application-state keys (avoids aiohttp NotAppKeyWarning).
+CREDENTIAL_STORE_KEY: "web.AppKey[CredentialStore]" = web.AppKey("credential_store")
+SESSION_MANAGER_KEY: "web.AppKey[SessionManager]" = web.AppKey("manager")
 
 
 # Anchor to the repository root so allowed roots are independent of CWD.
@@ -74,7 +82,7 @@ def resolve_session(request: web.Request):
 
     Returns (session, None) on success or (None, error_response) on failure.
     """
-    manager: SessionManager = request.app["manager"]
+    manager: SessionManager = request.app[SESSION_MANAGER_KEY]
     sid = request.match_info["session_id"]
     session = manager.get_session(sid)
     if not session:
@@ -171,13 +179,13 @@ async def error_middleware(request: web.Request, handler):
 
 async def _on_shutdown(app: web.Application) -> None:
     """Gracefully unload all agents on server shutdown."""
-    manager: SessionManager = app["manager"]
+    manager: SessionManager = app[SESSION_MANAGER_KEY]
     await manager.shutdown_all()
 
 
 async def handle_health(request: web.Request) -> web.Response:
     """GET /api/health — simple health check."""
-    manager: SessionManager = request.app["manager"]
+    manager: SessionManager = request.app[SESSION_MANAGER_KEY]
     sessions = manager.list_sessions()
     return web.json_response(
         {
@@ -225,8 +233,8 @@ def create_app(model: str | None = None) -> web.Application:
         logger.debug("Encrypted credential store unavailable, using in-memory fallback")
         credential_store = CredentialStore.for_testing({})
 
-    app["credential_store"] = credential_store
-    app["manager"] = SessionManager(model=model, credential_store=credential_store)
+    app[CREDENTIAL_STORE_KEY] = credential_store
+    app[SESSION_MANAGER_KEY] = SessionManager(model=model, credential_store=credential_store)
 
     # Register shutdown hook
     app.on_shutdown.append(_on_shutdown)
